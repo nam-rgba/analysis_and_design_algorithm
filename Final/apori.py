@@ -1,78 +1,44 @@
 import scipy.stats as stats
+from scipy.stats import norm, t
+from itertools import chain, combinations;
 def wPFI_Apriori(DB, w, msup, t , alpha):
     # create set of all item
     I=set(item for transaction in DB for item in transaction)
     WPFI=set()
 
     # scan and find size-1 wPFI
-    WPFI1, mu1=Scan_Find_Size_k_wPFI(I, DB, w, msup, t, 1)
+    WPFI1, mu1=Scan_Find_Size_k_wFPI(I, DB, w, msup, t, 1)
+    print('wpi1',WPFI1)
     WPFI.update(WPFI1)
 
     k=2
-    while WPFIk_minus_1 := set(wPFI_Apriori_Gen(WPFI, I, w, alpha, len(DB), msup, t, k)):
+    WPFIk_1=set()
+    while WPFIk_1!=set():
         # Step 7: Scan and find size-k wPFI
-        WPFIk, muk = Scan_Find_Size_k_wPFI(WPFIk_minus_1, DB, w, msup, t, k)
+        WPFIk, muk = Scan_Find_Size_k_wFPI(WPFI[k-1], DB, w, msup, t, k)
         
         # Step 8: Add size-k wPFI to WPFI
-        WPFI.update(WPFIk)
+        WPFI.update(WPFI[k])
         
         k += 1
 
     return WPFI
 
-def Scan_Find_Size_k_wPFI(Ck, DB, w, msup, t, k):
-    WPFIk = set()
-    muk = {}
 
-    for transaction in DB:
-        # Generate all subsets of the current transaction of size k
-        subsets = powerset(transaction, k)
-        
-        for candidate_str in Ck:
-            candidate = set(candidate_str.split(','))
-            # Check if the candidate is a subset of the current transaction
-            if candidate.issubset(transaction):
-                # Calculate the weighted support for the candidate
-                weighted_support = calculate_weighted_support(candidate, w)
 
-                # Calculate the probability of support being greater than or equal to msup
-                probability_support_ge_msup = calculate_probability_support_ge_msup(candidate, DB, msup)
 
-                # Check if the weighted probabilistic support meets the threshold
-                if weighted_support * probability_support_ge_msup >= t:
-                    WPFIk.add(candidate)
-
-                    # Update muk for the candidate
-                    if candidate not in muk:
-                        muk[candidate] = 1
-                    else:
-                        muk[candidate] += 1
-
-    return WPFIk, muk
-
-def powerset(s, k):
-    # Helper function to generate all subsets of a set with size k
-    result = [[]]
-    for elem in s:
-        result.extend([subset + [elem] for subset in result if len(subset) < k])
-    return [frozenset(subset) for subset in result if len(subset) == k]
 
 def wPFI_Apriori_Gen(WPFI_k_minus_1, I, w, u, alpha, n, msup, t):
-    Ck=set()
-    # maximum weight
-    m=max(w.values())
-
-    # mu hat
-    mu_hat=None
-    for mu_candicate in range (1, int(1e6)):
-        if 1-stats.norm.cdf(msup-1,mu_candicate) < t/m:
-            mu_hat=mu_candicate
-            break
-    if mu_hat is None:
-        raise ValueError("No valid mu_hat found. Consider adjusting the range")
+    Ck = []
+    m = max(w.values())
+    print('m: ',m)	
+    F = norm.cdf(msup - 1)
+    mu_hat = norm.ppf(1 - F) * t / m
+    print('mu_hat: ',mu_hat)	
     
     # init I'
     I_prime={i for i in I if any(i.issubset(Y) for Y in WPFI_k_minus_1)}
+    print('I_prime: ',WPFI_k_minus_1)	
 
     # Loop
     for X in WPFI_k_minus_1:
@@ -92,16 +58,40 @@ def wPFI_Apriori_Gen(WPFI_k_minus_1, I, w, u, alpha, n, msup, t):
 
     return Ck
 
+
+def powerset(iterable):
+    s = list(iterable)
+    return chain.from_iterable(combinations(s, r) for r in range(len(s) + 1))
 def calculate_weighted_support(candidate, w):
     # Helper function to calculate the weighted support of a candidate
     return sum(w[item] for item in candidate)
 
 
-def calculate_probability_support_ge_msup(candidate, DB, msup):
-    # Helper function to calculate the probability of support being greater than or equal to msup
-    count_support_ge_msup = sum(1 for transaction in DB if candidate.issubset(transaction))
-    total_transactions = len(DB)
-    return count_support_ge_msup / total_transactions
+def calculate_support(itemset, transactions):
+    # Helper function to calculate the support of an itemset in a transaction
+    for transaction in transactions:
+        count=sum(1 for item in itemset if item in transaction)/len(transactions)
+    return count
+
+def is_weighted_probabilistic_frequent_itemset(itemset, weights, transactions, msup, t):
+    # Helper function to check if a candidate is a weighted probabilistic frequent itemset
+    weight=calculate_weighted_support(itemset, weights)
+    support=calculate_support(itemset, transactions)
+    return weight*support>=t and support>=msup
+
+def Scan_Find_Size_k_wFPI(Ck, DB, w, msup, t):
+    frequent_itemsets=[]
+    muk={}
+
+    for itemset in powerset(Ck):
+        if is_weighted_probabilistic_frequent_itemset(itemset=itemset, weights=w, transactions=DB, msup=msup, t=t): 
+            frequent_itemsets.append(itemset)
+            if itemset not in muk:
+                muk[itemset] = 1
+            else:
+                muk[itemset] += 1
+
+    return frequent_itemsets, muk
 
 
 # Data set
@@ -126,6 +116,6 @@ print(result)
 # Definition 5 said: Từ 1 uncertain database, weight table w, minimum support msup, a probabilitic frequent
 # threshold t, , an itemset X ⊆ I is a weighted probabilistic frequent itemset if and only if w(X)Pr(sup(X) ≥ msup) ≥ t
 # Hàm wPFI_Apriori_Gen ở algorithms 1 chính là implementation của algorithm 3 :))
-# 
+# Hàm Scan_find_size là để check xem itemset X có phải weighted probabiltic frequent không
 # 
 # * #
