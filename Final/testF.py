@@ -1,39 +1,66 @@
-from typing import List, Dict
-from scipy.stats import norm, t
+import math
+import numpy as np
 
-def generate_candidate_set(WPFIk_1, I, w, u, alpha, n, msup, t) :
-    Ck = []
-    m = max(w.values())
-    print('m: ',m)	
-    F = norm.cdf(msup - 1)
-    mu_hat = norm.ppf(1 - F) * t / m
-    print('mu_hat: ',mu_hat)	
+def generate_mu_hat(msup, t, m):
+    mu_hat = None
+    for mu_candidate in range(1, int(1e6)):
+        if 1 - 0.5 * (1 + math.erf((msup - 1 - mu_candidate) / math.sqrt(2))) < t / m:
+            mu_hat = mu_candidate
+            break
 
-    I_prime={i for i in I if any(i.issubset(Y) for Y in WPFIk_1)}
+    if mu_hat is None:
+        raise ValueError("No valid mu_hat found. Consider adjusting the range in the loop.")
 
-    print('I: ',I_prime)	
+    return mu_hat
 
-    for X in WPFIk_1:
-        for I_i in set(I_prime) - set(X):
-            if w[X + [I_i]] >= t:
-                if min(u[X], u[I_i]) >= mu_hat and u[X] * u[I_i] >= alpha * n * mu_hat:
-                    Ck.append(X + [I_i])
-    X = min(WPFIk_1, key=lambda x: w[X])
-    for I_i in set(I) - set(I_prime) - set(X):
-        if w[X + [I_i]] >= t and w[I_i] < w[X]:
-            if min(u[X], u[I_i]) >= mu_hat and u[X] * u[I_i] >= alpha * n * mu_hat:
-                Ck.append(X + [I_i])
-    return Ck
+# Example usage
+w={'milk':0.4, 'fruit':0.9, 'video':0.6}
 
-# Example usage:
-WPFI_k_minus_1 = [{('A', 'B'), ('C',)}, {('A',), ('B', 'C')}]  # Example size-(k-1) WPFI set
-weights = {'A': 0.5, 'B': 0.8, 'C': 0.7}
-means = {'A': 0.3, 'B': 0.6, 'C': 0.5}
-scale = 0.2
-n = 100
-msup = 0.4
-t = 0.1
-alpha = 0.7
+msup = 10
+t = 5
+m = np.max(list(w.values()))  # Assuming `w` is a dictionary of weights
+mu_hat = generate_mu_hat(msup, t, m)
+print(mu_hat)
 
-Ck = generate_candidate_set(WPFI_k_minus_1, weights, means, scale, n, msup, t, alpha)
-print("Size-k Weighted Probabilistic Frequent Itemset Candidate Set:", Ck)
+
+
+
+
+
+
+
+
+
+# from itertools import product
+
+# def calculate_probability(X, msup, database):
+#     n = len(database)
+    
+#     possible_worlds = []
+    
+#     # Generate all possible worlds
+#     for i in product(*[[(item, 1 - database[j][item]) for item in database[j]] for j in range(n)]):
+#         possible_worlds.append(list(i))
+
+#     # Find worlds where X is a subset and meets the support condition
+#     satisfying_worlds = [world for world in possible_worlds if all(item in set(X) for item, _ in world) and sum(1 for _, prob in world if prob > 0) >= msup]
+
+#     # Calculate the probability for each satisfying world
+#     probabilities = [eval('*'.join(map(str, [1 - prob for _, prob in world]))) for world in satisfying_worlds]
+
+#     # Calculate the total probability
+#     total_probability = sum(probabilities)
+
+#     return total_probability
+
+# # Example usage:
+# DB = [
+#     {'milk': 0.4, 'fruit': 1.0, 'video': 0.3},
+#     {'milk': 1.0, 'fruit': 0.8}
+# ]
+
+# X = {'milk', 'fruit'}
+# msup = 2
+
+# probability = calculate_probability(X, msup, DB)
+# print(f'P(sup(X) ≥ msup): {probability:.3f}')
