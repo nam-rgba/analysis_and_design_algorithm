@@ -20,8 +20,8 @@ def process_transaction_data(input_file_path, output_file_path):
         print(f"An error occurred: {e}")
 
 # Example usage
-input_file_path = 'connect.txt'  # Replace with your input file path
-output_file_path = 'sample.csv'  # Replace with your desired output file path
+input_file_path = 'connect.txt'  
+output_file_path = 'sample.csv'  
 
 # process_transaction_data(input_file_path, output_file_path)
 
@@ -61,9 +61,9 @@ def generate_weight_table(input_file_path, output_file_path, delimiter=' ', line
         return None
 
 # Example usage
-input_file_path = 'connect.txt'  # Replace with your actual file path
-output_file_path = 'weight.csv'  # Replace with your desired output file path
-lines_to_read = 10
+input_file_path = 'connect.txt'  
+output_file_path = 'weight.csv' 
+lines_to_read = 100
 
 weight_table = generate_weight_table(input_file_path, output_file_path, lines_to_read=lines_to_read)
 

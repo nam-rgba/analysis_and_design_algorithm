@@ -1,7 +1,7 @@
 from scipy.stats import t
 from itertools import product
 import csv
-import random
+import timeit 
 import ast
 from collections import Counter
 
@@ -28,7 +28,6 @@ def wPFI_Apriori(DB: list, w: dict, msup:int, t:float , alpha:float)->list:
     # Check if I is w-PFI or not
 
     WPFI1, mu1=Scan_Find_Size_k_wFPI(DB, tempCk, w, msup, t,2)
-    print('wpi1',WPFI1)
     WPFI.append(WPFI1)
     mu.append(mu1)
     k: int=2
@@ -248,23 +247,6 @@ def isWPFI(Ck:set, DB:list, msup:int)->bool:
 
 
 
-    try:
-        with open(input_file_path, 'r') as infile, open(output_file_path, 'w', newline='') as outfile:
-            reader = csv.reader(infile, delimiter=' ')
-            writer = csv.writer(outfile, delimiter=',')
-
-            for row in reader:
-                # Convert each item in the row to a dictionary with a random float value
-                processed_row = {item: round(random.uniform(0.1, 1.0), 2) for item in row}
-                
-                # Write the processed row to the output file
-                writer.writerow(processed_row.values())
-
-    except FileNotFoundError:
-        print(f"File not found: {input_file_path}")
-    except Exception as e:
-        print(f"An error occurred: {e}")
-
 # Transaction Database
 DB=[
     {'milk':0.4,'fruit':1.0,'video':0.3},
@@ -283,7 +265,7 @@ alpha=0.2
 
 
 def read_first_100_rows(input_file_path):
-    
+    #  function to read the first 100 rows of a file
     try:
         data_list = []
 
@@ -306,6 +288,7 @@ def read_first_100_rows(input_file_path):
         return None
 
 def read_weight_file(file_path):
+    # Function to read the weights from a file
     try:
         weight_dict = {}
 
@@ -346,6 +329,12 @@ first_100_rows = read_first_100_rows(input_file_path)
 
 result = wPFI_Apriori(first_100_rows, weight_dictionary, msup, t, alpha)
 print(result)
+
+
+# benchmark the task
+time = timeit.timeit('wPFI_Apriori(first_100_rows, weight_dictionary, msup, t, alpha)', globals=locals(), number=6000)
+# report the result
+print(f'Took {time:.3f} seconds')
 
 
 
